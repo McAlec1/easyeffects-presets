@@ -11,7 +11,7 @@ Five output presets per system: **Balanced**, **Bass**, **Treble**, and two devi
 3. Run `bash install.sh` as your normal user (no `sudo`).
 4. Open EasyEffects → **Output → Presets** and select a profile.
 
-The installer first snapshots and verifies all existing Flatpak/native **input**, **output**, **autoload**, **IRS** and **RNNoise** directories to `backups/<timestamp>/` **alongside the installer**, then adds or replaces 130 JSON output presets. Existing unrelated presets are kept. To remove older output presets only **after verification of the backup**, use `bash install.sh --replace-output` (this is destructive to the current output folder, but recoverable from backup).
+Presets are organized in the repository as `presets/<manufacturer>/<model>/<device> - <style>.json`. The installer validates and flattens these files into EasyEffects' output folder, where presets are stored by filename. It first snapshots and verifies all existing Flatpak/native **input**, **output**, **autoload**, **IRS** and **RNNoise** directories to a uniquely named folder under `backups/` **alongside the installer**, then adds or replaces the repository's JSON output presets. Existing unrelated presets are kept. To remove existing top-level output JSON files only **after verification of the backup**, use `bash install.sh --replace-output` (this is destructive to the current output folder, but recoverable from backup).
 
 Default Flatpak path: `~/.var/app/com.github.wwmm.easyeffects/data/easyeffects/output/`.
 

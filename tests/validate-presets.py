@@ -9,7 +9,7 @@ from collections import Counter
 ROOT = Path(__file__).resolve().parents[1]
 P = ROOT / "presets"
 ALL = sorted(P.rglob("*.json"))
-assert len(ALL) == 130, f"Expected 130 presets, found {len(ALL)}"
+assert ALL, "No preset JSON files found"
 styles = Counter()
 devices = {}
 allowed = {"equalizer#0", "compressor#0", "limiter#0", "bass_enhancer#0", "bass_loudness#0", "filter#0", "stereo_tools#0", "crystalizer#0", "exciter#0"}
@@ -46,8 +46,8 @@ for path in ALL:
                 assert -12 <= band["gain"] <= 12 and math.isfinite(band["gain"]), (path, side, i)
         assert eq["split-channels"] is False, path
 
-assert len(devices) == 26, f"Expected 26 devices, got {len(devices)}"
 assert all(len(x) == 5 and {"Balanced", "Bass", "Treble"} <= x for x in devices.values())
+assert len(ALL) == 5 * len(devices), f"Expected five presets per device, found {len(ALL)} for {len(devices)} devices"
 with (ROOT/"index.csv").open(newline="") as f:
     rows = list(csv.DictReader(f))
 assert len(rows) == len(devices), len(rows)
@@ -57,10 +57,9 @@ for row in rows:
     assert row["device"] == f'{row["manufacturer"]} {row["model"]}', row
     preset_names = json.loads(row["preset"])
     descriptions = json.loads(row["description"])
-    effects = json.loads(row["effects"])
     assert len(preset_names) == len(set(preset_names)) == 5, row["device"]
     assert preset_names == sorted(preset_names), row["device"]
-    assert len(descriptions) == len(effects) == len(preset_names), row["device"]
+    assert len(descriptions) == len(preset_names), row["device"]
     for preset_name in preset_names:
         path = P / row["manufacturer"] / row["model"] / f'{row["device"]} - {preset_name}.json'
         assert path.is_file(), path

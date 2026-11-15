@@ -1,5 +1,7 @@
 # Changelog
 
+## v6
+
 ## v5
 
 - Adds 15 documented devices and 75 stereo PCM output presets (now 130 across 26 systems).

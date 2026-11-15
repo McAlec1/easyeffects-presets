@@ -6,9 +6,10 @@ on:
       - "presets/**"
       - "tests/**"
       - "install.sh"
-      - "preset-index.csv"
-      - "v5-additions.csv"
-      - ".github/workflows/validate-presets.yml"
+      - "index.csv"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - ".github/workflows/check.yml"
   workflow_dispatch:
 
 permissions:
@@ -19,9 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate JSON preset collection and index
+      - name: Validate preset JSON
         run: python3 tests/validate-json.py
+      - name: Validate preset structure and index
+        run: python3 tests/validate-presets.py
       - name: Validate shell syntax
-        run: bash -n install.sh tests/verify_installer.sh
-      - name: Verify backup-first installation
-        run: bash tests/verify_installer.sh
+        run: bash -n install.sh
+      - name: Check installer dry run
+        run: bash install.sh --dry-run

@@ -16,12 +16,12 @@ usage() {
   cat <<'HELP'
 Usage: bash install.sh [--dry-run] [--replace-output]
 
-BACKUP FIRST: snapshot all existing EasyEffects input/output presets and associated autoload/IR/RNNoise directories from Flatpak and native locations into backups/<timestamp>/ next to this script, BEFORE installing new JSON files.
-The installer then adds/replaces 130 output presets in the Flatpak folder.
+BACKUP FIRST: snapshot all existing EasyEffects input/output presets and associated autoload/IR/RNNoise directories from Flatpak and native locations into backups/<timestamp>-<random>/ next to this script, BEFORE installing new JSON files.
+The installer then adds/replaces the repository's output presets in the Flatpak folder.
 Unrelated presets are NEVER removed. No audio settings or rates are changed.
 
 --dry-run         Show backup sources and file changes; write nothing.
---replace-output  After verified backup, remove old Flatpak OUTPUT *.json files before installing the new 130. Existing INPUT presets are kept.
+--replace-output  After verified backup, remove old Flatpak OUTPUT *.json files before installing the repository presets. Existing INPUT presets are kept.
 HELP
 }
 
@@ -39,23 +39,34 @@ if [[ ! -d "$SRC" ]]; then
 fi
 shopt -s globstar nullglob
 files=("$SRC"/**/*.json)
-if [[ ${#files[@]} -ne 130 ]]; then
-  echo "ERROR: expected 130 .json files; found ${#files[@]}. Aborting before making changes." >&2
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "ERROR: no .json preset files found under presets/. Aborting before making changes." >&2
   exit 1
 fi
+profile_count=${#files[@]}
 
 python3 - "$SRC" <<'PYVALID'
 import json,sys,pathlib
 src=pathlib.Path(sys.argv[1]); files=sorted(src.rglob('*.json'))
+output_names=set()
 for file in files:
-    data=json.loads(file.read_text())
-    output=data['output']
-    order=output['plugins_order']
-    if not isinstance(order,list) or len(set(order)) != len(order):
-        raise ValueError(f'Bad plugin order in {file}')
-    for plugin in order:
-        if plugin not in output: raise ValueError(f'Plugin {plugin} missing in {file}')
-print(f'Validated {len(files)} output preset JSON files.')
+  relative=file.relative_to(src)
+  if len(relative.parts) != 3:
+    raise ValueError(f'Expected presets/<manufacturer>/<model>/<device> - <style>.json: {file}')
+  manufacturer,model,filename=relative.parts
+  if not filename.startswith(f'{manufacturer} {model} - '):
+    raise ValueError(f'Filename does not match manufacturer/model folders: {file}')
+  if filename in output_names:
+    raise ValueError(f'Duplicate output preset filename: {filename}')
+  output_names.add(filename)
+  data=json.loads(file.read_text())
+  output=data['output']
+  order=output['plugins_order']
+  if not isinstance(order,list) or len(set(order)) != len(order):
+    raise ValueError(f'Bad plugin order in {file}')
+  for plugin in order:
+    if plugin not in output: raise ValueError(f'Plugin {plugin} missing in {file}')
+print(f'Validated {len(files)} output preset JSON files and source paths.')
 PYVALID
 
 roots=("$FLATPAK_DATA" "$FLATPAK_OLD_CONFIG" "$NATIVE_DATA" "$NATIVE_OLD_CONFIG")
@@ -87,8 +98,8 @@ for file in "${files[@]}"; do
     new=$((new+1))
   fi
 done
-printf '\nPlanned: %d new, %d replacements, %d unchanged; %d existing directories to snapshot.\n' \
-  "$new" "$overwritten" "$identical" "$found"
+printf '\nPlanned: %d new, %d replacements, %d unchanged out of %d repository presets; %d existing directories to snapshot.\n' \
+  "$new" "$overwritten" "$identical" "$profile_count" "$found"
 if (( REPLACE_OUTPUT )); then
   old_output_files=("$TARGET"/*.json)
   printf "Replace-output requested: %d existing OUTPUT JSON preset files will be cleared AFTER backup.\n" "${#old_output_files[@]}"
