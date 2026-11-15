@@ -1,0 +1,26 @@
+name: Validate v5 speaker presets
+on:
+  pull_request:
+    paths:
+      - "presets/**"
+      - "tests/**"
+      - "install.sh"
+      - "preset-index.csv"
+      - "v5-additions.csv"
+      - ".github/workflows/validate-presets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON preset collection and index
+        run: python3 tests/validate_presets.py
+      - name: Validate shell syntax
+        run: bash -n install.sh tests/verify_installer.sh
+      - name: Verify backup-first installation
+        run: bash tests/verify_installer.sh

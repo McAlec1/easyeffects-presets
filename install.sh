@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# EasyEffects 8.3.x Flatpak speaker-preset installer.
+# EasyEffects 8.3.x Flatpak speaker-preset installer (v5 / 130 output profiles).
 # This script MUST be run from an extracted writable folder as your normal user.
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 SRC="$SCRIPT_DIR/presets"
@@ -21,12 +21,12 @@ Usage: bash install.sh [--dry-run] [--replace-output]
 BACKUP FIRST: snapshot all existing EasyEffects input/output presets and
 associated autoload/IR/RNNoise directories from Flatpak and native locations
 into backups/<timestamp>/ next to this script, BEFORE installing new JSON files.
-The installer then adds/replaces 55 output presets in the Flatpak folder.
+The installer then adds/replaces 130 output presets in the Flatpak folder.
 Unrelated presets are NEVER removed. No audio settings or rates are changed.
 
 --dry-run         Show backup sources and file changes; write nothing.
 --replace-output  After verified backup, remove old Flatpak OUTPUT *.json files
-                  before installing the new 55. Existing INPUT presets are kept.
+                  before installing the new 130. Existing INPUT presets are kept.
 HELP
 }
 
@@ -44,8 +44,8 @@ if [[ ! -d "$SRC" ]]; then
 fi
 shopt -s nullglob
 files=("$SRC"/*.json)
-if [[ ${#files[@]} -ne 55 ]]; then
-  echo "ERROR: expected 55 .json files; found ${#files[@]}. Aborting before making changes." >&2
+if [[ ${#files[@]} -ne 130 ]]; then
+  echo "ERROR: expected 130 .json files; found ${#files[@]}. Aborting before making changes." >&2
   exit 1
 fi
 
