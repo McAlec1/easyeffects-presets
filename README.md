@@ -32,4 +32,4 @@ For contribution guidelines and validation steps, see [CONTRIBUTING.md](CONTRIBU
   Get modest 62–125 Hz EQ; tiny laptop drivers get modest 125–250 Hz warmth instead. Two laptop Bass profiles use *mild* Bass Enhancer, never combined with Bass Loudness.
 
 - **Volume and Gain:**
-  Toned presets reserve negative preamp headroom to limit clipping, so louder isn't necessarily better. Balanced is a neutral flat EQ-only control (0 dB preamp) to compare against EasyEffects bypass. Output DAC sample rate is not determined by analog speaker hardware.
+  Toned presets reserve negative preamp headroom to limit clipping, so louder isn't necessarily better. Some Balanced presets are neutral flat-EQ controls at 0 dB preamp; others use gentle tonal adjustments. Output DAC sample rate is not determined by analog speaker hardware.

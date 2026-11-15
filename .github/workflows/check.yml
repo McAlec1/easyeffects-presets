@@ -1,6 +1,15 @@
 name: Validate Presets
 
 on:
+  push:
+    paths:
+      - "presets/**"
+      - "tests/**"
+      - "install.sh"
+      - "index.csv"
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - ".github/workflows/check.yml"
   pull_request:
     paths:
       - "presets/**"
@@ -30,3 +39,5 @@ jobs:
         run: bash -n install.sh
       - name: Check installer dry run
         run: bash install.sh --dry-run
+      - name: Test isolated installation
+        run: bash tests/test-install.sh

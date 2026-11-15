@@ -55,7 +55,7 @@ assert {row["device"] for row in rows} == set(devices)
 indexed_paths = set()
 for row in rows:
     assert row["device"] == f'{row["manufacturer"]} {row["model"]}', row
-    preset_names = json.loads(row["preset"])
+    preset_names = json.loads(row["presets"])
     descriptions = json.loads(row["description"])
     assert len(preset_names) == len(set(preset_names)) == 5, row["device"]
     assert preset_names == sorted(preset_names), row["device"]

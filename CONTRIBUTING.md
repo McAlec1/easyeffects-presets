@@ -26,4 +26,5 @@ python3 tests/validate-csv.py
 python3 tests/validate-json.py
 python3 tests/validate-presets.py
 bash install.sh --dry-run
+bash tests/test-install.sh
 ```

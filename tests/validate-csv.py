@@ -12,12 +12,14 @@ EXPECTED_COLUMNS = [
 	"model",
 	"device",
 	"category",
-	"version",
-	"tested_version",
+	"channels",
+	"preset_revision",
+	"target_version",
+	"hardware_verified",
 	"configuration",
 	"description",
-	"preset",
-	"ref",
+	"presets",
+	"reference",
 ]
 REQUIRED_PRESETS = {"Balanced", "Bass", "Treble"}
 
@@ -59,7 +61,7 @@ try:
 				errors.append(f"line {line_number}: duplicate device {row['device']!r}")
 			devices.add(row["device"])
 
-			for column in ("description", "preset"):
+			for column in ("description", "presets"):
 				try:
 					data = json.loads(row[column])
 				except json.JSONDecodeError as error:
@@ -71,12 +73,12 @@ try:
 					isinstance(item, str) and item.strip() for item in data
 				):
 					errors.append(f"line {line_number}: {column} must be a list of non-empty strings")
-				elif column == "preset":
+				elif column == "presets":
 					preset_names = data
 					if len(data) != 5 or len(data) != len(set(data)):
-						errors.append(f"line {line_number}: preset must contain five unique names")
+						errors.append(f"line {line_number}: presets must contain five unique names")
 					if not REQUIRED_PRESETS.issubset(data):
-						errors.append(f"line {line_number}: preset must include {sorted(REQUIRED_PRESETS)}")
+						errors.append(f"line {line_number}: presets must include {sorted(REQUIRED_PRESETS)}")
 				else:
 					descriptions = data
 
@@ -84,9 +86,9 @@ try:
 				if len(descriptions) != len(preset_names):
 					errors.append(f"line {line_number}: description count must match preset count")
 
-			reference = urlparse(row["ref"])
+			reference = urlparse(row["reference"])
 			if reference.scheme != "https" or not reference.netloc:
-				errors.append(f"line {line_number}: ref must be an HTTPS URL")
+				errors.append(f"line {line_number}: reference must be an HTTPS URL")
 
 		if row_count == 0:
 			errors.append("index.csv contains no data rows")
