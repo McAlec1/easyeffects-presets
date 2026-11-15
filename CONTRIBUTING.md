@@ -22,6 +22,7 @@ For missing devices, incorrect tuning, or installer problems, include the device
 Before opening a pull request, run:
 
 ```sh
+python3 tests/validate-csv.py
 python3 tests/validate-json.py
 python3 tests/validate-presets.py
 bash install.sh --dry-run
