@@ -20,10 +20,10 @@ For contribution guidelines and validation steps, see [CONTRIBUTING.md](CONTRIBU
 ## Compatibility
 
 - **Windows, macOS, Android, iOS:**
-  EasyEffects is not available for Windows, macOS, Android, or iOS. PipeWire is required for audio processing; ALSA and PulseAudio are not supported.
+  EasyEffects is not available for Windows, macOS, Android, or iOS. PipeWire is required for audio processing; applications using ALSA or PulseAudio compatibility can still be processed when correctly routed through PipeWire.
 
 - **CD Players:**
-  Unless your CD player is connected to a Linux/PipeWire system, EasyEffects cannot process audio from it. Use a proper digital connection (USB, HDMI, S/PDIF) to a Linux/PipeWire system to use EasyEffects.
+  CD audio can be processed when routed through a Linux/PipeWire system and EasyEffects, using either a digital connection or an analog input. A standalone CD player playing directly through its own amplifier cannot be affected.
 
 - **Surround, Atmos, DTS:X, studio speakers:**
   EasyEffects is a **stereo PCM** processor, not discrete 5.1, lossless HDMI bitstream, or object-based surround. Bypass EasyEffects and let receivers/soundbars decode original multichannel material.

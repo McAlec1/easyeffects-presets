@@ -1,4 +1,4 @@
-name: Validate v5 speaker presets
+name: Validate Presets
 
 on:
   pull_request:
