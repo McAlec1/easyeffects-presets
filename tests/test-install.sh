@@ -80,4 +80,60 @@ for preset in "${presets[@]}"; do
   fi
 done
 
+stale_output="$flatpak_data/output/stale-replace-output.json"
+kept_output="$flatpak_data/output/keep-during-replace-output.txt"
+printf 'stale preset\n' > "$stale_output"
+printf 'keep this file\n' > "$kept_output"
+
+HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
+  bash "$STAGED_REPO/install.sh" --replace-output
+
+backups=("$STAGED_REPO"/backups/*)
+if [[ ${#backups[@]} -ne 2 ]]; then
+  echo 'ERROR: expected a separate verified backup for --replace-output.' >&2
+  exit 1
+fi
+replace_backup=""
+for candidate in "${backups[@]}"; do
+  if [[ "$candidate" != "$backup" ]]; then
+    replace_backup="$candidate"
+  fi
+done
+if [[ -z "$replace_backup" ]]; then
+  echo 'ERROR: could not locate the --replace-output backup.' >&2
+  exit 1
+fi
+
+if [[ -e "$stale_output" || -e "$flatpak_data/output/unrelated-install-test.json" ]]; then
+  echo 'ERROR: --replace-output retained stale OUTPUT JSON presets.' >&2
+  exit 1
+fi
+if ! cmp -s -- "$kept_output" <(printf 'keep this file\n'); then
+  echo 'ERROR: --replace-output removed a non-JSON OUTPUT file.' >&2
+  exit 1
+fi
+if ! cmp -s -- "$replace_backup/flatpak-data/output/stale-replace-output.json" <(printf 'stale preset\n'); then
+  echo 'ERROR: stale OUTPUT preset was not backed up before replacement.' >&2
+  exit 1
+fi
+if ! cmp -s -- "$replace_backup/flatpak-data/output/unrelated-install-test.json" <(printf 'unrelated preset\n'); then
+  echo 'ERROR: unrelated OUTPUT preset was not backed up before replacement.' >&2
+  exit 1
+fi
+if [[ $(find "$flatpak_data/output" -maxdepth 1 -type f -name '*.json' | wc -l) -ne ${#presets[@]} ]]; then
+  echo 'ERROR: --replace-output did not leave exactly the repository presets installed.' >&2
+  exit 1
+fi
+for preset in "${presets[@]}"; do
+  installed="$flatpak_data/output/$(basename -- "$preset")"
+  if ! cmp -s -- "$preset" "$installed"; then
+    echo "ERROR: repository preset missing or differs after --replace-output: $(basename -- "$preset")" >&2
+    exit 1
+  fi
+done
+if [[ ! -f "$flatpak_data/input/install-test-marker.txt" ]]; then
+  echo 'ERROR: --replace-output removed an existing INPUT preset.' >&2
+  exit 1
+fi
+
 printf 'Isolated installation verified: %d presets copied and all existing fixture directories backed up.\n' "${#presets[@]}"

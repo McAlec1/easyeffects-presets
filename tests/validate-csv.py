@@ -2,6 +2,7 @@
 """Validate the CSV structure and metadata in the device index."""
 import csv
 import json
+import re
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -22,6 +23,20 @@ EXPECTED_COLUMNS = [
 	"reference",
 ]
 REQUIRED_PRESETS = {"Balanced", "Bass", "Treble"}
+VALID_CATEGORIES = {
+	"desktop_2.1",
+	"desktop_speakers",
+	"home_theater",
+	"laptop",
+	"micro_hifi",
+	"powered_bookshelf",
+	"soundbar",
+	"studio_monitors",
+}
+CHANNELS_PATTERN = re.compile(r"[1-9][0-9]*(?:\.[0-9]+){1,2}\Z")
+REVISION_PATTERN = re.compile(r"[1-9][0-9]*\Z")
+TARGET_VERSION_PATTERN = re.compile(r"[0-9]+\.[0-9]+\.(?:[0-9]+|x)\Z")
+VALID_HARDWARE_VERIFIED = {"true", "false"}
 
 
 def fail(message):
@@ -50,6 +65,26 @@ try:
 			for column, value in row.items():
 				if not value.strip():
 					errors.append(f"line {line_number}: {column} must not be empty")
+			if row["category"] not in VALID_CATEGORIES:
+				errors.append(
+					f"line {line_number}: category must be one of {sorted(VALID_CATEGORIES)}"
+				)
+			if not CHANNELS_PATTERN.fullmatch(row["channels"]):
+				errors.append(
+					f"line {line_number}: channels must contain two or three dot-separated numbers"
+				)
+			if not REVISION_PATTERN.fullmatch(row["preset_revision"]):
+				errors.append(
+					f"line {line_number}: preset_revision must be a positive integer"
+				)
+			if not TARGET_VERSION_PATTERN.fullmatch(row["target_version"]):
+				errors.append(
+					f"line {line_number}: target_version must use major.minor.patch format"
+				)
+			if row["hardware_verified"] not in VALID_HARDWARE_VERIFIED:
+				errors.append(
+					f"line {line_number}: hardware_verified must be 'true' or 'false'"
+				)
 
 			preset_names = None
 			descriptions = None
