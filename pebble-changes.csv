@@ -1,6 +1,0 @@
-preset,filename,eq_gain_db,preamp_db,effects,purpose
-Balanced,Creative Pebble V1-V2 - Balanced.json,"0,0,0,0,0,0,0,0,0,0",0.0,equalizer#0,"Transparent control (flat EQ, no bass-loudness, compression, limiter or widening); should approximate EasyEffects bypass."
-Bass,Creative Pebble V1-V2 - Bass.json,"0,0,3.5,2.3,0.2,-0.5,-0.1,0.2,0.2,0",-2.8,"equalizer#0, bass_enhancer#0, limiter#0","More punch near 125–250 Hz without sub-bass overload; mild harmonic enhancement, not stacked Bass Loudness."
-Treble,Creative Pebble V1-V2 - Treble.json,"0,0,0.2,0.1,-0.3,0,0.7,1.6,1.8,0.5",-1.6,"equalizer#0, limiter#0",Clear detail and presence without removing bass or aggressively raising sibilance.
-Warm & Rich,Creative Pebble V1-V2 - Warm & Rich.json,"0,0,2.8,1.7,0.3,-0.4,-0.2,0.2,0.5,0",-2.2,"equalizer#0, limiter#0","Fuller low mids, natural dynamics; EQ-only coloration plus peak control, no synthetic bass or compression."
-Desktop Gaming,Creative Pebble V1-V2 - Desktop Gaming.json,"0,0,2.3,1.1,-0.2,0.1,1.1,0.8,0.3,0",-2.0,"equalizer#0, limiter#0",Kick and dialogue/footstep presence with low processing latency and no compressor.
