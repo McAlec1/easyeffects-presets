@@ -2,6 +2,33 @@
 
 ## v6
 
+- Reorganizes the entire preset collection into manufacturer- and model-specific directories using the `presets/<manufacturer>/<model>/` structure.
+- Standardizes directory names and preset filenames to improve navigation, consistency, and maintainability.
+- Refines the collection to **115 output presets across 23 speaker systems**, retaining five profiles per device.
+- Removes support for the Apple MacBook Pro 14-inch M4 (2024), Sonos Arc Ultra surround configuration, and Sony HT-A9 + SA-SW5 systems.
+- Renames the Framework Laptop 13 and Lenovo ThinkPad T470 preset files for consistency with the new directory structure.
+- Replaces the previous preset indexes with a consolidated `index.csv` containing one record per supported device.
+- Expands device metadata with standardized categories, hardware channel configurations, preset revisions, target EasyEffects versions, and hardware verification status.
+- Populates device categories and channel configurations using manufacturer specifications.
+- Introduces stricter CSV validation for supported categories, channel formats, positive preset revisions, EasyEffects version formats, and boolean verification flags.
+- Adds validation for device names, duplicate entries, preset definitions, descriptions, and reference URLs.
+- Improves JSON validation with checks for file structure, effect ordering, equalizer parameters, and preset consistency.
+- Updates the installation script to recursively discover presets within manufacturer/model directories.
+- Removes hardcoded preset and device counts from the installer and validation scripts.
+- Adds validation for directory layouts, filename conventions, and duplicate output preset names before installation.
+- Preserves timestamped, verified backups of existing EasyEffects input/output presets, autoload configurations, impulse responses, and RNNoise resources.
+- Retains the `--dry-run` option for previewing installation changes without modifying existing files.
+- Improves testing of the `--replace-output` option, verifying backup preservation, removal of stale output presets, retention of non-JSON files, and successful reinstallation.
+- Introduces comprehensive isolated installation tests covering backups, preset replacement, preservation of unrelated presets, and input preset safety.
+- Consolidates GitHub Actions into a version-independent validation workflow.
+- Enables automated validation on pushes and pull requests, alongside manual workflow execution.
+- Adds `CONTRIBUTING.md` with guidelines for new devices, preset submissions, metadata requirements, and validation procedures.
+- Documents hardware verification requirements, distinguishing successful physical-device testing from JSON validation and manufacturer specification checks.
+- Adds the MIT license and standardized `.gitattributes` rules for consistent LF line endings.
+- Improves README documentation covering installation, directory organization, PipeWire requirements, CD audio routing, stereo PCM processing, surround sound limitations, and gain considerations.
+- Removes obsolete index files, historical release-note files, and the v4-specific release workflow.
+- Preserves the audio processing and equalization settings of retained presets during the repository restructuring.
+
 ## v5
 
 - Adds 15 documented devices and 75 stereo PCM output presets (now 130 across 26 systems).
