@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# EasyEffects 8.3.x Flatpak speaker-preset installer (v5 / 130 output profiles).
-# This script MUST be run from an extracted writable folder as your normal user.
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 SRC="$SCRIPT_DIR/presets"
 FLATPAK_BASE="${EASYEFFECTS_FLATPAK_BASE:-$HOME/.var/app/com.github.wwmm.easyeffects}"
@@ -18,15 +16,12 @@ usage() {
   cat <<'HELP'
 Usage: bash install.sh [--dry-run] [--replace-output]
 
-BACKUP FIRST: snapshot all existing EasyEffects input/output presets and
-associated autoload/IR/RNNoise directories from Flatpak and native locations
-into backups/<timestamp>/ next to this script, BEFORE installing new JSON files.
-The installer then adds/replaces 130 output presets in the Flatpak folder.
+BACKUP FIRST: snapshot all existing EasyEffects input/output presets and associated autoload/IR/RNNoise directories from Flatpak and native locations into backups/<timestamp>-<random>/ next to this script, BEFORE installing new JSON files.
+The installer then adds/replaces the repository's output presets in the Flatpak folder.
 Unrelated presets are NEVER removed. No audio settings or rates are changed.
 
 --dry-run         Show backup sources and file changes; write nothing.
---replace-output  After verified backup, remove old Flatpak OUTPUT *.json files
-                  before installing the new 130. Existing INPUT presets are kept.
+--replace-output  After verified backup, remove old Flatpak OUTPUT *.json files before installing the repository presets. Existing INPUT presets are kept.
 HELP
 }
 
@@ -42,30 +37,38 @@ done
 if [[ ! -d "$SRC" ]]; then
   echo "ERROR: missing presets/ folder next to installer." >&2; exit 1
 fi
-shopt -s nullglob
-files=("$SRC"/*.json)
-if [[ ${#files[@]} -ne 130 ]]; then
-  echo "ERROR: expected 130 .json files; found ${#files[@]}. Aborting before making changes." >&2
+shopt -s globstar nullglob
+files=("$SRC"/**/*.json)
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "ERROR: no .json preset files found under presets/. Aborting before making changes." >&2
   exit 1
 fi
+profile_count=${#files[@]}
 
-# Validate every preset's JSON and plugin order before touching any user data.
 python3 - "$SRC" <<'PYVALID'
 import json,sys,pathlib
-src=pathlib.Path(sys.argv[1]); files=sorted(src.glob('*.json'))
+src=pathlib.Path(sys.argv[1]); files=sorted(src.rglob('*.json'))
+output_names=set()
 for file in files:
-    data=json.loads(file.read_text())
-    output=data['output']
-    order=output['plugins_order']
-    if not isinstance(order,list) or len(set(order)) != len(order):
-        raise ValueError(f'Bad plugin order in {file}')
-    for plugin in order:
-        if plugin not in output: raise ValueError(f'Plugin {plugin} missing in {file}')
-print(f'Validated {len(files)} output preset JSON files.')
+  relative=file.relative_to(src)
+  if len(relative.parts) != 3:
+    raise ValueError(f'Expected presets/<manufacturer>/<model>/<device> - <style>.json: {file}')
+  manufacturer,model,filename=relative.parts
+  if not filename.startswith(f'{manufacturer} {model} - '):
+    raise ValueError(f'Filename does not match manufacturer/model folders: {file}')
+  if filename in output_names:
+    raise ValueError(f'Duplicate output preset filename: {filename}')
+  output_names.add(filename)
+  data=json.loads(file.read_text())
+  output=data['output']
+  order=output['plugins_order']
+  if not isinstance(order,list) or len(set(order)) != len(order):
+    raise ValueError(f'Bad plugin order in {file}')
+  for plugin in order:
+    if plugin not in output: raise ValueError(f'Plugin {plugin} missing in {file}')
+print(f'Validated {len(files)} output preset JSON files and source paths.')
 PYVALID
 
-# Also back up old config folders because EasyEffects versions migrated their
-# presets between XDG config and data locations.
 roots=("$FLATPAK_DATA" "$FLATPAK_OLD_CONFIG" "$NATIVE_DATA" "$NATIVE_OLD_CONFIG")
 labels=("flatpak-data" "flatpak-legacy-config" "native-data" "native-legacy-config")
 sections=("input" "output" "autoload" "irs" "rnnoise")
@@ -95,8 +98,8 @@ for file in "${files[@]}"; do
     new=$((new+1))
   fi
 done
-printf '\nPlanned: %d new, %d replacements, %d unchanged; %d existing directories to snapshot.\n' \
-  "$new" "$overwritten" "$identical" "$found"
+printf '\nPlanned: %d new, %d replacements, %d unchanged out of %d repository presets; %d existing directories to snapshot.\n' \
+  "$new" "$overwritten" "$identical" "$profile_count" "$found"
 if (( REPLACE_OUTPUT )); then
   old_output_files=("$TARGET"/*.json)
   printf "Replace-output requested: %d existing OUTPUT JSON preset files will be cleared AFTER backup.\n" "${#old_output_files[@]}"
@@ -115,8 +118,6 @@ BACKUP="$(mktemp -d "$SCRIPT_DIR/backups/$(date +%Y%m%d-%H%M%S)-XXXXXXXX")"
 printf 'EasyEffects snapshot — %s\n' "$(date -Is)" > "$BACKUP/manifest.txt"
 printf 'Host user home: %s\n' "$HOME" >> "$BACKUP/manifest.txt"
 
-# Full directory snapshots, not just same-named preset files.
-# Copy and verify *all files* in each existing source directory before import.
 for i in "${!roots[@]}"; do
   for section in "${sections[@]}"; do
     source="${roots[$i]}/$section"
@@ -133,7 +134,6 @@ for i in "${!roots[@]}"; do
 done
 printf '\nBackup complete and verified: %s\n' "$BACKUP"
 
-# No cleanup; keep all unrelated user's own presets as they were.
 mkdir -p -- "$TARGET"
 if (( REPLACE_OUTPUT )); then
   existing_output=("$TARGET"/*.json)
@@ -145,7 +145,6 @@ changed=0
 for file in "${files[@]}"; do
   destination="$TARGET/$(basename -- "$file")"
   if [[ -f "$destination" ]] && cmp -s -- "$file" "$destination"; then continue; fi
-  # Stage in same destination FS, then rename atomically (avoid half-written JSON).
   temp="$(mktemp "$TARGET/.easyeffects-import-XXXXXXXX")"
   cp -- "$file" "$temp"
   chmod 644 -- "$temp"
