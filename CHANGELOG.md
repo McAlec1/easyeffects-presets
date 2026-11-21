@@ -1,5 +1,7 @@
 # Changelog
 
+## v7
+
 ## v6
 
 - Reorganizes the entire preset collection into manufacturer- and model-specific directories using the `presets/<manufacturer>/<model>/` structure.
