@@ -1,0 +1,27 @@
+name: Test Installer
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Installer regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Validate Bash syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in install.sh tests/*.sh; do
+            bash -n "$script"
+          done
+      - name: Test installer dry run
+        run: bash install.sh --dry-run
+      - name: Test CLI behavior
+        run: bash tests/test-cli.sh
+      - name: Test isolated installation
+        run: bash tests/test-install.sh

@@ -20,120 +20,157 @@ backup_labels=(flatpak-data flatpak-legacy-config native-data native-legacy-conf
 sections=(input output autoload irs rnnoise)
 
 for i in "${!source_roots[@]}"; do
-  for section in "${sections[@]}"; do
-    fixture="${source_roots[$i]}/$section"
-    mkdir -p -- "$fixture"
-    printf 'fixture %s/%s\n' "${backup_labels[$i]}" "$section" > "$fixture/install-test-marker.txt"
-  done
+	for section in "${sections[@]}"; do
+		fixture="${source_roots[$i]}/$section"
+		mkdir -p -- "$fixture"
+		printf 'fixture %s/%s\n' "${backup_labels[$i]}" "$section" >"$fixture/install-test-marker.txt"
+	done
 done
 
 mapfile -t presets < <(find "$STAGED_REPO/presets" -type f -name '*.json' -print | sort)
 if [[ ${#presets[@]} -eq 0 ]]; then
-  echo 'ERROR: no preset files found for installation test.' >&2
-  exit 1
+	echo 'ERROR: no preset files found for installation test.' >&2
+	exit 1
 fi
 
 first_preset="${presets[0]}"
 conflicting_name="$(basename -- "$first_preset")"
-printf 'previous version\n' > "$flatpak_data/output/$conflicting_name"
-printf 'unrelated preset\n' > "$flatpak_data/output/unrelated-install-test.json"
+printf 'previous version\n' >"$flatpak_data/output/$conflicting_name"
+printf 'unrelated preset\n' >"$flatpak_data/output/unrelated-install-test.json"
 
 HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
-  bash "$STAGED_REPO/install.sh"
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" >"$TEMP_DIR/normal-install.out" 2>"$TEMP_DIR/normal-install.err"
+if ! grep -q "Actual newly installed: $((${#presets[@]} - 1))" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the newly installed preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual existing presets replaced: 1" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the replaced preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual identical presets skipped: 0" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the skipped preset count accurately." >&2
+	exit 1
+fi
 
 backups=("$STAGED_REPO"/backups/*)
 if [[ ${#backups[@]} -ne 1 || ! -d "${backups[0]}" ]]; then
-  echo 'ERROR: expected exactly one isolated backup directory.' >&2
-  exit 1
+	echo 'ERROR: expected exactly one isolated backup directory.' >&2
+	exit 1
 fi
 backup="${backups[0]}"
 
 for i in "${!source_roots[@]}"; do
-  for section in "${sections[@]}"; do
-    source_marker="${source_roots[$i]}/$section/install-test-marker.txt"
-    backup_marker="$backup/${backup_labels[$i]}/$section/install-test-marker.txt"
-    if ! cmp -s -- "$source_marker" "$backup_marker"; then
-      echo "ERROR: backup missing or differs from $source_marker" >&2
-      exit 1
-    fi
-  done
+	for section in "${sections[@]}"; do
+		source_marker="${source_roots[$i]}/$section/install-test-marker.txt"
+		backup_marker="$backup/${backup_labels[$i]}/$section/install-test-marker.txt"
+		if ! cmp -s -- "$source_marker" "$backup_marker"; then
+			echo "ERROR: backup missing or differs from $source_marker" >&2
+			exit 1
+		fi
+	done
 done
 
 if ! cmp -s -- "$first_preset" "$flatpak_data/output/$conflicting_name"; then
-  echo "ERROR: repository preset was not installed: $conflicting_name" >&2
-  exit 1
+	echo "ERROR: repository preset was not installed: $conflicting_name" >&2
+	exit 1
 fi
 if ! cmp -s -- "$backup/flatpak-data/output/$conflicting_name" <(printf 'previous version\n'); then
-  echo "ERROR: prior preset was not preserved in the backup: $conflicting_name" >&2
-  exit 1
+	echo "ERROR: prior preset was not preserved in the backup: $conflicting_name" >&2
+	exit 1
 fi
 if ! cmp -s -- "$flatpak_data/output/unrelated-install-test.json" <(printf 'unrelated preset\n'); then
-  echo 'ERROR: unrelated output file was not retained.' >&2
-  exit 1
+	echo 'ERROR: unrelated output file was not retained.' >&2
+	exit 1
 fi
 
 for preset in "${presets[@]}"; do
-  installed="$flatpak_data/output/$(basename -- "$preset")"
-  if ! cmp -s -- "$preset" "$installed"; then
-    echo "ERROR: installed preset missing or differs from source: $(basename -- "$preset")" >&2
-    exit 1
-  fi
+	installed="$flatpak_data/output/$(basename -- "$preset")"
+	if ! cmp -s -- "$preset" "$installed"; then
+		echo "ERROR: installed preset missing or differs from source: $(basename -- "$preset")" >&2
+		exit 1
+	fi
 done
 
 stale_output="$flatpak_data/output/stale-replace-output.json"
 kept_output="$flatpak_data/output/keep-during-replace-output.txt"
-printf 'stale preset\n' > "$stale_output"
-printf 'keep this file\n' > "$kept_output"
+printf 'stale preset\n' >"$stale_output"
+printf 'keep this file\n' >"$kept_output"
 
 HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
-  bash "$STAGED_REPO/install.sh" --replace-output
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" --replace-output \
+	>"$TEMP_DIR/replace-install.out" 2>"$TEMP_DIR/replace-install.err"
+
+if ! grep -q "Actual old output JSON presets removed: $((${#presets[@]} + 2))" "$TEMP_DIR/replace-install.out"; then
+	echo "ERROR: replacement installation did not report the removed preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual repository presets installed: ${#presets[@]}" "$TEMP_DIR/replace-install.out"; then
+	echo "ERROR: replacement installation did not report the repository preset count accurately." >&2
+	exit 1
+fi
 
 backups=("$STAGED_REPO"/backups/*)
 if [[ ${#backups[@]} -ne 2 ]]; then
-  echo 'ERROR: expected a separate verified backup for --replace-output.' >&2
-  exit 1
+	echo 'ERROR: expected a separate verified backup for --replace-output.' >&2
+	exit 1
 fi
 replace_backup=""
 for candidate in "${backups[@]}"; do
-  if [[ "$candidate" != "$backup" ]]; then
-    replace_backup="$candidate"
-  fi
+	if [[ "$candidate" != "$backup" ]]; then
+		replace_backup="$candidate"
+	fi
 done
 if [[ -z "$replace_backup" ]]; then
-  echo 'ERROR: could not locate the --replace-output backup.' >&2
-  exit 1
+	echo 'ERROR: could not locate the --replace-output backup.' >&2
+	exit 1
 fi
 
 if [[ -e "$stale_output" || -e "$flatpak_data/output/unrelated-install-test.json" ]]; then
-  echo 'ERROR: --replace-output retained stale OUTPUT JSON presets.' >&2
-  exit 1
+	echo 'ERROR: --replace-output retained stale OUTPUT JSON presets.' >&2
+	exit 1
 fi
 if ! cmp -s -- "$kept_output" <(printf 'keep this file\n'); then
-  echo 'ERROR: --replace-output removed a non-JSON OUTPUT file.' >&2
-  exit 1
+	echo 'ERROR: --replace-output removed a non-JSON OUTPUT file.' >&2
+	exit 1
 fi
 if ! cmp -s -- "$replace_backup/flatpak-data/output/stale-replace-output.json" <(printf 'stale preset\n'); then
-  echo 'ERROR: stale OUTPUT preset was not backed up before replacement.' >&2
-  exit 1
+	echo 'ERROR: stale OUTPUT preset was not backed up before replacement.' >&2
+	exit 1
 fi
 if ! cmp -s -- "$replace_backup/flatpak-data/output/unrelated-install-test.json" <(printf 'unrelated preset\n'); then
-  echo 'ERROR: unrelated OUTPUT preset was not backed up before replacement.' >&2
-  exit 1
+	echo 'ERROR: unrelated OUTPUT preset was not backed up before replacement.' >&2
+	exit 1
 fi
 if [[ $(find "$flatpak_data/output" -maxdepth 1 -type f -name '*.json' | wc -l) -ne ${#presets[@]} ]]; then
-  echo 'ERROR: --replace-output did not leave exactly the repository presets installed.' >&2
-  exit 1
+	echo 'ERROR: --replace-output did not leave exactly the repository presets installed.' >&2
+	exit 1
 fi
 for preset in "${presets[@]}"; do
-  installed="$flatpak_data/output/$(basename -- "$preset")"
-  if ! cmp -s -- "$preset" "$installed"; then
-    echo "ERROR: repository preset missing or differs after --replace-output: $(basename -- "$preset")" >&2
-    exit 1
-  fi
+	installed="$flatpak_data/output/$(basename -- "$preset")"
+	if ! cmp -s -- "$preset" "$installed"; then
+		echo "ERROR: repository preset missing or differs after --replace-output: $(basename -- "$preset")" >&2
+		exit 1
+	fi
 done
 if [[ ! -f "$flatpak_data/input/install-test-marker.txt" ]]; then
-  echo 'ERROR: --replace-output removed an existing INPUT preset.' >&2
-  exit 1
+	echo 'ERROR: --replace-output removed an existing INPUT preset.' >&2
+	exit 1
+fi
+
+HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" >"$TEMP_DIR/identical-install.out" 2>"$TEMP_DIR/identical-install.err"
+if ! grep -q "Actual newly installed: 0" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation reported a new preset." >&2
+	exit 1
+fi
+if ! grep -q "Actual existing presets replaced: 0" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation reported a replacement." >&2
+	exit 1
+fi
+if ! grep -q "Actual identical presets skipped: ${#presets[@]}" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation did not report skipped presets accurately." >&2
+	exit 1
 fi
 
 printf 'Isolated installation verified: %d presets copied and all existing fixture directories backed up.\n' "${#presets[@]}"
