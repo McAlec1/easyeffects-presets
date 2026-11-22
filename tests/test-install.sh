@@ -39,7 +39,19 @@ printf 'previous version\n' >"$flatpak_data/output/$conflicting_name"
 printf 'unrelated preset\n' >"$flatpak_data/output/unrelated-install-test.json"
 
 HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
-	bash "$STAGED_REPO/install.sh"
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" >"$TEMP_DIR/normal-install.out" 2>"$TEMP_DIR/normal-install.err"
+if ! grep -q "Actual newly installed: $((${#presets[@]} - 1))" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the newly installed preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual existing presets replaced: 1" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the replaced preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual identical presets skipped: 0" "$TEMP_DIR/normal-install.out"; then
+	echo "ERROR: normal installation did not report the skipped preset count accurately." >&2
+	exit 1
+fi
 
 backups=("$STAGED_REPO"/backups/*)
 if [[ ${#backups[@]} -ne 1 || ! -d "${backups[0]}" ]]; then
@@ -86,7 +98,17 @@ printf 'stale preset\n' >"$stale_output"
 printf 'keep this file\n' >"$kept_output"
 
 HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
-	bash "$STAGED_REPO/install.sh" --replace-output
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" --replace-output \
+	>"$TEMP_DIR/replace-install.out" 2>"$TEMP_DIR/replace-install.err"
+
+if ! grep -q "Actual old output JSON presets removed: $((${#presets[@]} + 2))" "$TEMP_DIR/replace-install.out"; then
+	echo "ERROR: replacement installation did not report the removed preset count accurately." >&2
+	exit 1
+fi
+if ! grep -q "Actual repository presets installed: ${#presets[@]}" "$TEMP_DIR/replace-install.out"; then
+	echo "ERROR: replacement installation did not report the repository preset count accurately." >&2
+	exit 1
+fi
 
 backups=("$STAGED_REPO"/backups/*)
 if [[ ${#backups[@]} -ne 2 ]]; then
@@ -133,6 +155,21 @@ for preset in "${presets[@]}"; do
 done
 if [[ ! -f "$flatpak_data/input/install-test-marker.txt" ]]; then
 	echo 'ERROR: --replace-output removed an existing INPUT preset.' >&2
+	exit 1
+fi
+
+HOME="$TEST_HOME" EASYEFFECTS_FLATPAK_BASE="$FLATPAK_BASE" \
+	NO_COLOR=1 bash "$STAGED_REPO/install.sh" >"$TEMP_DIR/identical-install.out" 2>"$TEMP_DIR/identical-install.err"
+if ! grep -q "Actual newly installed: 0" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation reported a new preset." >&2
+	exit 1
+fi
+if ! grep -q "Actual existing presets replaced: 0" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation reported a replacement." >&2
+	exit 1
+fi
+if ! grep -q "Actual identical presets skipped: ${#presets[@]}" "$TEMP_DIR/identical-install.out"; then
+	echo "ERROR: identical installation did not report skipped presets accurately." >&2
 	exit 1
 fi
 

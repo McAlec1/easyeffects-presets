@@ -62,6 +62,7 @@
 - [x] `-V`, `--version`
 - [x] `-n`, `--dry-run`
 - [x] `--non-interactive`
+- [x] Restore `--dry-run --replace-output` as a side-effect-free destructive replacement preview.
 
 ### 2.2 Installation options
 

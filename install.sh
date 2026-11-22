@@ -163,9 +163,6 @@ validate_args() {
 	if ((SHOW_HELP && SHOW_VERSION)); then
 		die "$EXIT_INVALID_ARGUMENT" "--help and --version cannot be used together."
 	fi
-	if ((DRY_RUN && REPLACE_OUTPUT)); then
-		die "$EXIT_INVALID_ARGUMENT" "--dry-run and --replace-output cannot be used together."
-	fi
 }
 
 check_dependencies() {
@@ -319,9 +316,16 @@ print_installation_plan() {
 		shopt -s nullglob
 		existing_output_files=("$TARGET"/*.json)
 		existing_output_count=${#existing_output_files[@]}
-		log_warn "Destructive replacement: $existing_output_count existing top-level output JSON preset(s) will be removed."
-		log_info "Planned install: ${#PRESET_FILES[@]} repository preset(s); unrelated JSON presets will not be retained."
-		log_info "Planned preserve: input presets and all non-JSON output files."
+		if ((DRY_RUN)); then
+			log_warn "Destructive replacement preview: $existing_output_count existing top-level output JSON preset(s) would be removed."
+			log_info "Repository presets: ${#PRESET_FILES[@]} repository preset(s) would be installed."
+			log_info "Unrelated output JSON presets would be removed."
+			log_info "Input presets and non-JSON output files would be retained."
+		else
+			log_warn "Destructive replacement: $existing_output_count existing top-level output JSON preset(s) will be removed."
+			log_info "Planned install: ${#PRESET_FILES[@]} repository preset(s); unrelated JSON presets will not be retained."
+			log_info "Planned preserve: input presets and all non-JSON output files."
+		fi
 	else
 		log_info "Planned additions: ${#NEW_PRESETS[@]}"
 		log_info "Planned replacements: ${#REPLACEMENT_PRESETS[@]}"
@@ -378,20 +382,23 @@ verify_backup() {
 replace_output_presets() {
 	local existing_output_files=()
 	local old_file
+	local removed=0
 
 	shopt -s nullglob
 	existing_output_files=("$TARGET"/*.json)
 	for old_file in "${existing_output_files[@]}"; do
 		rm -f -- "$old_file" || die "$EXIT_GENERAL" "Could not remove existing output preset: $old_file"
+		removed=$((removed + 1))
 	done
-	log_info "Removed ${#existing_output_files[@]} existing top-level output JSON preset(s)."
+	log_info "Actual old output JSON presets removed: $removed"
 }
 
 install_presets() {
 	local file
 	local destination
 	local temp_file
-	local changed=0
+	local new=0
+	local replaced=0
 	local identical=0
 
 	mkdir -p -- "$TARGET" || die "$EXIT_GENERAL" "Could not create target output directory: $TARGET"
@@ -407,6 +414,11 @@ install_presets() {
 			continue
 		fi
 
+		if [[ -f "$destination" ]]; then
+			replaced=$((replaced + 1))
+		else
+			new=$((new + 1))
+		fi
 		if ! temp_file="$(mktemp "$TARGET/.easyeffects-import-XXXXXXXX")"; then
 			die "$EXIT_GENERAL" "Could not create a temporary preset file in $TARGET."
 		fi
@@ -421,18 +433,28 @@ install_presets() {
 			die "$EXIT_GENERAL" "Could not replace preset atomically: $(basename -- "$destination")"
 		fi
 		ACTIVE_TEMP=""
-		changed=$((changed + 1))
 	done
 
-	print_installation_summary "$changed" "$identical"
+	print_installation_summary "$new" "$replaced" "$identical"
 }
 
 print_installation_summary() {
-	local changed="${1}"
-	local identical="${2}"
+	local new="${1}"
+	local replaced="${2}"
+	local identical="${3}"
 
-	log_success "Actual installed/replaced: $changed preset(s)."
-	log_info "Actual already identical/skipped: $identical preset(s)."
+	if ((REPLACE_OUTPUT)); then
+		log_success "Actual repository presets installed: $((new + replaced + identical))"
+		log_info "Actual newly installed: $new"
+		log_info "Actual existing presets replaced: $replaced"
+		log_info "Actual identical presets skipped: $identical"
+		log_info "Actual presets not modified: $identical"
+	else
+		log_success "Actual newly installed: $new"
+		log_info "Actual existing presets replaced: $replaced"
+		log_info "Actual identical presets skipped: $identical"
+		log_info "Actual presets not modified: $identical"
+	fi
 	log_success "Backup location: $BACKUP"
 
 	if ((REPLACE_OUTPUT)); then
