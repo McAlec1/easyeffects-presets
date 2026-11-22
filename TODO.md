@@ -17,58 +17,58 @@
 
 ### 1.1 Coding conventions
 
-- [ ] Standardize indentation and formatting using `shfmt`.
-- [ ] Add ShellCheck validation.
-- [ ] Retain `#!/usr/bin/env bash`.
-- [ ] Retain strict mode with `set -euo pipefail`.
-- [ ] Standardize function names using `lower_snake_case`.
-- [ ] Use `UPPER_SNAKE_CASE` for constants and environment configuration.
-- [ ] Use local variables within functions where appropriate.
-- [ ] Quote variable expansions correctly.
-- [ ] Handle filenames and directories containing spaces.
-- [ ] Use Bash arrays for file collections.
-- [ ] Avoid unnecessary external dependencies.
-- [ ] Document the minimum supported Bash version.
+- [x] Standardize indentation and formatting using `shfmt`.
+- [x] Add ShellCheck validation.
+- [x] Retain `#!/usr/bin/env bash`.
+- [x] Retain strict mode with `set -euo pipefail`.
+- [x] Standardize function names using `lower_snake_case`.
+- [x] Use `UPPER_SNAKE_CASE` for constants and environment configuration.
+- [x] Use local variables within functions where appropriate.
+- [x] Quote variable expansions correctly.
+- [x] Handle filenames and directories containing spaces.
+- [x] Use Bash arrays for file collections.
+- [x] Avoid unnecessary external dependencies.
+- [x] Document the minimum supported Bash version.
 
 ### 1.2 Installer architecture
 
-- [ ] Introduce a `main()` entry point.
-- [ ] Separate argument parsing from execution.
-- [ ] Create reusable logging functions.
-- [ ] Create centralized error-handling functions.
-- [ ] Separate preset discovery and validation.
+- [x] Introduce a `main()` entry point.
+- [x] Separate argument parsing from execution.
+- [x] Create reusable logging functions.
+- [x] Create centralized error-handling functions.
+- [x] Separate preset discovery and validation.
 - [ ] Separate environment and distribution detection.
-- [ ] Separate backup creation and verification.
-- [ ] Separate installation and reporting logic.
-- [ ] Eliminate duplicated operations.
-- [ ] Keep the script reasonably modular without overengineering it.
-- [ ] Preserve existing v6 installation behavior during the initial refactor.
+- [x] Separate backup creation and verification.
+- [x] Separate installation and reporting logic.
+- [x] Eliminate duplicated operations.
+- [x] Keep the script reasonably modular without overengineering it.
+- [x] Preserve existing v6 installation behavior during the initial refactor.
 
 ### 1.3 Error handling
 
-- [ ] Define consistent exit codes.
-- [ ] Return nonzero status for failures.
-- [ ] Produce descriptive error messages.
-- [ ] Validate dependencies before operations that require them.
-- [ ] Detect failed commands and interrupted operations.
-- [ ] Avoid hiding errors with overly broad fallback behavior.
-- [ ] Handle unexpected or missing environment variables.
+- [x] Define consistent exit codes.
+- [x] Return nonzero status for failures.
+- [x] Produce descriptive error messages.
+- [x] Validate dependencies before operations that require them.
+- [x] Detect failed commands and interrupted operations.
+- [x] Avoid hiding errors with overly broad fallback behavior.
+- [x] Handle unexpected or missing environment variables.
 
 ## 2. Command-Line Interface Standardization
 
 ### 2.1 General options
 
-- [ ] `-h`, `--help`
-- [ ] `-V`, `--version`
-- [ ] `-n`, `--dry-run`
-- [ ] `--non-interactive`
+- [x] `-h`, `--help`
+- [x] `-V`, `--version`
+- [x] `-n`, `--dry-run`
+- [x] `--non-interactive`
 
 ### 2.2 Installation options
 
 - [ ] `-t`, `--target TARGET`
 - [ ] `-d`, `--device DEVICE`
 - [ ] `--all-devices`
-- [ ] Preserve `--replace-output`.
+- [x] Preserve `--replace-output`.
 - [ ] Add an explicit custom installation path option.
 
 ### 2.3 Information and management options
@@ -82,14 +82,14 @@
 
 ### 2.4 Argument validation
 
-- [ ] Reject unknown arguments.
+- [x] Reject unknown arguments.
 - [ ] Reject missing option values.
 - [ ] Validate accepted target values.
-- [ ] Detect conflicting options.
-- [ ] Prevent destructive operations from executing accidentally.
-- [ ] Handle repeated arguments consistently.
-- [ ] Support commands in noninteractive environments.
-- [ ] Keep option behavior backward-compatible where reasonable.
+- [x] Detect conflicting options.
+- [x] Prevent destructive operations from executing accidentally.
+- [x] Handle repeated arguments consistently.
+- [x] Support commands in noninteractive environments.
+- [x] Keep option behavior backward-compatible where reasonable.
 
 **Implementation rule:** Introduce CLI options alongside their functionality. Do not advertise unimplemented options as available.
 
@@ -97,42 +97,42 @@
 
 ### 3.1 Standardized `--help`
 
-- [ ] Display the installer name and current version.
-- [ ] Provide a concise description of the utility.
-- [ ] Display a standardized usage synopsis.
-- [ ] Group arguments by category.
-- [ ] Explain defaults.
-- [ ] Include examples of common operations.
-- [ ] Document supported installation targets.
-- [ ] Explain backups and destructive operations.
-- [ ] Document exit codes.
-- [ ] Include links to project documentation.
-- [ ] Ensure help is readable without terminal colors.
-- [ ] Ensure `--help` and `--version` work without EasyEffects installed.
+- [x] Display the installer name and current version.
+- [x] Provide a concise description of the utility.
+- [x] Display a standardized usage synopsis.
+- [x] Group arguments by category.
+- [x] Explain defaults.
+- [x] Include examples of common operations.
+- [x] Document supported installation targets.
+- [x] Explain backups and destructive operations.
+- [x] Document exit codes.
+- [x] Include links to project documentation.
+- [x] Ensure help is readable without terminal colors.
+- [x] Ensure `--help` and `--version` work without EasyEffects installed.
 
 ### 3.2 Terminal output
 
-- [ ] Standardize `INFO`, `WARN`, `ERROR`, and success messages.
-- [ ] Send normal information to stdout.
-- [ ] Send errors and warnings to stderr.
-- [ ] Add optional colored output.
-- [ ] Respect the `NO_COLOR` convention.
-- [ ] Disable colors automatically when output is not a terminal.
-- [ ] Avoid unnecessary terminal decorations.
+- [x] Standardize `INFO`, `WARN`, `ERROR`, and success messages.
+- [x] Send normal information to stdout.
+- [x] Send errors and warnings to stderr.
+- [x] Add optional colored output.
+- [x] Respect the `NO_COLOR` convention.
+- [x] Disable colors automatically when output is not a terminal.
+- [x] Avoid unnecessary terminal decorations.
 - [ ] Clearly identify detected EasyEffects installations.
-- [ ] Display the selected installation destination.
-- [ ] Show backup locations.
-- [ ] Report added, updated, unchanged, skipped, and removed presets.
-- [ ] Display useful next steps after installation.
-- [ ] Correct misleading messages when `--replace-output` is used.
+- [x] Display the selected installation destination.
+- [x] Show backup locations.
+- [x] Report added, updated, unchanged, skipped, and removed presets.
+- [x] Display useful next steps after installation.
+- [x] Correct misleading messages when `--replace-output` is used.
 
 ### 3.3 Command behavior
 
-- [ ] Ensure help and version commands are side-effect-free.
-- [ ] Ensure informational commands do not require administrator privileges.
-- [ ] Return appropriate exit statuses.
-- [ ] Provide actionable guidance after common failures.
-- [ ] Ensure dry-run output accurately represents planned changes.
+- [x] Ensure help and version commands are side-effect-free.
+- [x] Ensure informational commands do not require administrator privileges.
+- [x] Return appropriate exit statuses.
+- [x] Provide actionable guidance after common failures.
+- [x] Ensure dry-run output accurately represents planned changes.
 
 ## 4. Documentation & Repository Organization
 

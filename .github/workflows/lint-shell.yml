@@ -1,0 +1,29 @@
+name: Lint Shell Scripts
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ShellCheck and shfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install ShellCheck and shfmt
+        uses: taiki-e/install-action@v2
+        with:
+          tool: |
+            shellcheck@0.11.0
+            shfmt@3.14.1
+          fallback: none
+      - name: Show tool versions
+        run: |
+          shellcheck --version
+          shfmt --version
+      - name: Run ShellCheck
+        run: shellcheck install.sh tests/*.sh
+      - name: Check shell formatting
+        run: shfmt -d install.sh tests/*.sh
